@@ -5,7 +5,7 @@ const axios = require('axios');
 const Summoner = require('../classes/summoner');
 const Profile = require('../classes/profile');
 
-router.get('/by-name/:name', async (req, res) => {
+router.get('/:name', async (req, res) => {
     let name = req.params.name;
     let summoner = new Summoner(await getSummonerInfo(name));
     await summoner.getLeague();

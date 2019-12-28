@@ -16,7 +16,7 @@ class Summoner {
          return this.league
         }else {
             var response = await axios.get(`https://na1.api.riotgames.com/tft/league/v1/entries/by-summoner/${this.id}?api_key=${keys.riot}`);
-            this.league = response.data[0]; // returns an array
+            this.league = response.data[0]; // riot api returns an array
             return this.league
         }
     }
