@@ -5,7 +5,7 @@ const axios = require('axios');
 const Match = require('../classes/match');
 
 router.get('/:puuid', async (req, res) => {
-    let count = req.query.count || 20;
+    let count = req.query.count || 15;
     let response = await axios.get(`https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/${req.params.puuid}/ids?count=${count}&api_key=${keys.riot}`);
     let rawMatches = await getMatchData(response.data);
     let finsishedMatches = createMatches(rawMatches, req.params.puuid);

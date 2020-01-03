@@ -1,6 +1,6 @@
 class Match {
     constructor(matchDto, puuid) {
-        this.id = matchDto.match_id;
+        this.id = matchDto.metadata.match_id;
         this.playerId = puuid;
         this.timeStart = matchDto.info.game_datetime;
         this.gameLength = matchDto.info.game_length;
@@ -18,6 +18,15 @@ class Match {
         this.playersEliminated = stats.players_eliminated;
         this.goldLeft = stats.gold_left;
         this.units = stats.units;
+        this.units.map( unit => { // map item numbers to objects with item id and image path and replace units list
+            let newItems = unit.items.map( item => {
+                return {
+                    id: item, 
+                    imageLink: `images/riot-assets-9.24.2/9.24.2/img/item/${item}.png`
+                }
+            });
+            unit.items = newItems;
+        })
         this.traits = stats.traits;
 
     }
