@@ -3,33 +3,43 @@ const router = express.Router();
 const keys = require('../keys');
 const axios = require('axios');
 const Match = require('../classes/match');
+const RiotError = require('../classes/error');
 
-router.get('/:puuid', async (req, res) => {
-    let count = req.query.count || 15;
-    let response = await axios.get(`https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/${req.params.puuid}/ids?count=${count}&api_key=${keys.riot}`);
-    if(response instanceof Error){
-        response.body.status.type = "error";
-        res.json(response.body.status);
+router.get('/:puuid', async (req, res, next) => {
+    try{
+        let count = req.query.count || 30;
+        let response = await axios.get(`https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/${req.params.puuid}/ids?count=${count}&api_key=${keys.riot}`);
+        let rawMatches = await getMatchData(response.data);
+        let finsishedMatches = createMatches(rawMatches, req.params.puuid);
+        res.json(finsishedMatches);
+    }catch(err){
+        next(new RiotError(err));
     }
-    let rawMatches = await getMatchData(response.data);
-    if(rawMatches instanceof Error){
-        rawMatches.body.status.type = "error";
-        res.json(rawMatches.body.status);
-    }
-    let finsishedMatches = createMatches(rawMatches, req.params.puuid);
-    res.json(finsishedMatches);
 })
 
 async function getMatchData(ids) {
-    let matches = ids.map(async id => {
-        try{
-            let response = await axios.get(`https://americas.api.riotgames.com/tft/match/v1/matches/${id}?api_key=${keys.riot}`);
-            return response.data
-        }catch(err) {
-            return err
+    let i = 0;
+    let allMatches = [];
+    let time = 0;
+    let wait = 0;
+    while(allMatches.length < ids.length){
+        if((Date.now() - time)/1000 > wait){
+            try{
+                let response = await axios.get(`https://americas.api.riotgames.com/tft/match/v1/matches/${ids[i]}?api_key=${keys.riot}`);
+                allMatches.push(response.data);
+                i++;
+            }catch(err){
+                if(err.response.data.status.status_code === 429){
+                    time = Date.now();
+                    wait = err.response.headers['retry-after'];
+                    continue
+                }else{
+                    throw err
+                }
+            }
         }
-    });
-    return Promise.all(matches)
+    }
+    return await Promise.all(allMatches)
 }
 
 function createMatches(matches, puuid) {
